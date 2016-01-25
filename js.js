@@ -28,20 +28,20 @@ function createList(id,obj){
 
 function showHide(context){
     var ElChil = context.parentElement.children[1];
-    if (ElChil.hidden) {
-        ElChil.hidden = false;
-    }
-    else ElChil.hidden = true;
+    ElChil.hidden =!ElChil.hidden;
 }
 
 function add(context) {
     var text = prompt('Please write name for new folder');
     if (text) {
-        var li = document.createElement('li');
-        li.className = 'folder';
-        li.innerHTML = '<span onclick="showHide(this)">+</span>' + text + '<ul hidden="true"><li   type="none" onclick="add(this)">Add</li></ul>';
-        context.parentElement.insertBefore(li, context);
-        saveNewElem(findIndexOfElement(li).slice(0,-1),text);
+        if(checkName(context,text)) {
+            var li = document.createElement('li');
+            li.className = 'folder';
+            li.innerHTML = '<span onclick="showHide(this)">+</span>' + text + '<ul hidden="true"><li   type="none" onclick="add(this)">Add</li></ul>';
+            context.parentElement.insertBefore(li, context);
+            saveNewElem(findIndexOfElement(li).slice(0, -1), text);
+        }
+        else alert('Please choose another name');
     }
 }
 
@@ -81,14 +81,11 @@ function findAllParentElements(elements,childElem){
 
 function saveNewElem(path,name){
     var count = 1 ;
-    console.log(path);
     var p = path[0];
-    console.log(p);
     var iter = 0;
     (function f(o,ind){
         iter++;
         count = 1;
-        console.log(path.length);
         if(iter-1 == path.length) {
             o[name] = {};
             return;
@@ -96,11 +93,23 @@ function saveNewElem(path,name){
         for (var i in o ){
             if(count == ind) {
                 p = path[iter];
-                console.log(p);
                 f(o[i], p);
                 return;
             }
             else count ++;
         }
     })(sObj,p);
+    console.log(sObj);
+}
+
+function checkName(element, text){
+    var isOriginal = true;
+    for(var i =0;i<element.parentElement.childElementCount-1; i++){
+        element=element.previousElementSibling;
+        if(element.childNodes[1].data==text){
+            isOriginal = false;
+            break;
+        }
+    }
+    return isOriginal;
 }
