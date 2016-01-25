@@ -1,65 +1,106 @@
 /**
  * Created by dmitriy on 21.01.16.
  */
-var path = {
-    1 : '1.1/1.1.1/1.1.1.1/',
-    2 : '2.1/2.1.1/2.1.1.1./2.1.1.1.1/',
-    3 : '3.1/3.1.1/'
+
+var sObj = {};
+var div;
+
+function createList(id,obj){
+    sObj=obj||{};
+    div = document.getElementById(id);
+    var fUl = document.createElement('ul');
+    div.appendChild(fUl);
+    var list = '';
+    var position='';
+    list = (function f(o){
+     //   var count = 1;
+        var buf = '';
+        for(var i in o){
+   //         position+='.'+count;
+            buf += '<li class = "folder"><span onclick="showHide(this)">+</span>' + i + '<ul hidden="true">'+f(o[i])+'<li  type="none" onclick="add(this)">Add</li></ul></li>';
+            position=position.slice(0,-2);
+     //       count++;
+        }
+        return buf;
+    })(sObj);
+    fUl.innerHTML=list+'<li type="none" onclick="add(this)">Add</li>';
 }
 
-function createList(){
-    for(var i in path){
-        addToPage(path[i].split('/').slice(0,-1),i);
+function showHide(context){
+    var ElChil = context.parentElement.children[1];
+    if (ElChil.hidden) {
+        ElChil.hidden = false;
+    }
+    else ElChil.hidden = true;
+}
+
+function add(context) {
+    var text = prompt('Please write name for new folder');
+    if (text) {
+        var li = document.createElement('li');
+        li.className = 'folder';
+        li.innerHTML = '<span onclick="showHide(this)">+</span>' + text + '<ul hidden="true"><li   type="none" onclick="add(this)">Add</li></ul>';
+        context.parentElement.insertBefore(li, context);
+        saveNewElem(findIndexOfElement(li).slice(0,-1),text);
     }
 }
 
-function addToPage(arr,file){
-    var i = 0;
-    var isRoot=true;
-    alert(i);
-    var context=document.body;
-    if(document.body.children.length===1) {
-        var ul = document.createElement('ul');
-        ul.innerHTML = '<li id="a" type="none" onclick="add(this)">Add</li>';
-        context.appendChild(ul);
-    }
-
-    (function f(){
-        var n =0;
-        if(!i) {
-            context = document.getElementById('a');
-
+function findIndexOfElement(elem){
+    var liAdd = div.getElementsByClassName('folder');
+    var index = '';
+    var count = 1;
+    var curElem;
+    var pElements = findAllParentElements(liAdd,elem);
+    (function f(e){
+        curElem = e.previousElementSibling;
+        if(curElem){
+            count++
         }
         else{
-            n = context.parentElement.getElementsByClassName('add').length;
-            isRoot?context=context.parentElement.getElementsByClassName('add')[n-1]:context=context.parentElement.getElementsByClassName('add')[0];
-            isRoot=false;
+            index += '.'+count;
+            count = 1;
+            if(pElements.length)
+                curElem = pElements.pop();
+            else{
+                return;
+            }
         }
-        if(i===arr.length)
-            add(context, file, true);
-        else{
-            add(context,arr[i++]);
-            f();
-        }
-    })();
+        f(curElem);
+    })(elem);
+    return index.slice(1).split('.').reverse();
 }
 
-function func(context){
-        var ElChil = context.parentElement.children[1];
-        if (ElChil.hidden) {
-            ElChil.hidden = false;
-        }
-        else ElChil.hidden = true;
-}
-
-function add(context,text,isFille){
-        var buf='';
-        text?this.text=text:this.text=prompt('Please write new fold');
-        isFille?buf=this.text:buf='<span onclick="func(this)">+</span>'+this.text+'<ul hidden="true"><li class="add"  type="none" onclick="add(this)">Add</li></ul>';
-    if (this.text) {
-            var li = document.createElement('li');
-            li.innerHTML =buf;
-            var n = context.parentElement.children.length;
-            context.parentElement.insertBefore(li, context.parentElement.children[n - 1]);
+function findAllParentElements(elements,childElem){
+    var parentElements = [];
+    for(var i = 0; i< elements.length; i++){
+        if(elements[i].compareDocumentPosition(childElem) & 16)
+            parentElements.push(elements[i]);
     }
+    return parentElements;
+}
+
+function saveNewElem(path,name){
+    var count = 1 ;
+    console.log(path);
+    var p = path[0];
+    console.log(p);
+    var iter = 0;
+    (function f(o,ind){
+        iter++;
+        count = 1;
+        console.log(path.length);
+        if(iter-1 == path.length) {
+            o[name] = {};
+            return;
+        }
+        for (var i in o ){
+            if(count == ind) {
+                p = path[iter];
+                console.log(p);
+                f(o[i], p);
+                return;
+            }
+            else count ++;
+        }
+    })(sObj,p);
 }

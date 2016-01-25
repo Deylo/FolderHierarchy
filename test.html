@@ -8,6 +8,23 @@
 </head>
 
 <body>
-<script>document.onload=createList()</script>
+    <div id = 'folderHierarchy'></div>
+    <script>
+        var obj = {
+            '1' : {
+                '1.1' : {
+                    '1.1.1' : {}
+                },
+                '1.2' :{}
+            },
+            '2' : {
+                '2.1.1' : {}
+            },
+            '3' : {}
+        };
+
+        document.onload=createList('folderHierarchy',obj);
+    </script>
+
 </body>
 </html>
