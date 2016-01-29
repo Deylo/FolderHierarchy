@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Title</title>
     <script src="js.js"></script>
+    <link rel="stylesheet" href="css.css">
 
 </head>
 
@@ -13,9 +14,11 @@
         var obj = {
             '1' : {
                 '1.1' : {
-                    '1.1.1' : {}
+                    '1.1.1' : {'tyty' : {}}
                 },
-                '1.2' :{}
+                '1.2' :{
+
+                }
             },
             '2' : {
                 '2.1.1' : {}
@@ -23,7 +26,7 @@
             '3' : {}
         };
 
-        document.onload=createList('folderHierarchy',obj);
+        document.onload=createList('folderHierarchy', obj);
     </script>
 
 </body>

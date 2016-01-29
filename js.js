@@ -5,48 +5,77 @@
 var sObj = {};
 var div;
 
+function addButtonHtml(index){
+    return '<li data-description="addButton" onclick="add('+index+')">Add</li>';
+}
+function toggleButtonHTML(index ){
+    return '<div data-description="toggleButton" class="button" onclick="toggle('+index+')">+</div>';
+}
+
 function createList(id,obj){
     sObj=obj||{};
     div = document.getElementById(id);
     var fUl = document.createElement('ul');
+    fUl.className = '123';
+    fUl.dataset.index = '0';
     div.appendChild(fUl);
     var list = '';
     var position='';
     list = (function f(o){
-     //   var count = 1;
+        var count = 1;
         var buf = '';
         for(var i in o){
-   //         position+='.'+count;
-            buf += '<li class = "folder"><span onclick="showHide(this)">+</span>' + i + '<ul hidden="true">'+f(o[i])+'<li  type="none" onclick="add(this)">Add</li></ul></li>';
+            if(position)
+                position += '.' + count;
+            else position = '' + count;
+            buf += '<li class = "folder" data-index="'+position+'">'+toggleButtonHTML(position)+'<img data-description="elementImage" src="image/folderClose.png" ><span data-description="elementName" class="name">' + i + '</span><ul class="123" data-index="'+position+'" data-description="nestedList" hidden="true">'+f(o[i])+addButtonHtml(position)+'</ul></li>';
             position=position.slice(0,-2);
-     //       count++;
+            count++;
         }
         return buf;
     })(sObj);
-    fUl.innerHTML=list+'<li type="none" onclick="add(this)">Add</li>';
+    fUl.innerHTML = list + addButtonHtml(0);
 }
 
-function showHide(context){
-    var ElChil = context.parentElement.children[1];
-    ElChil.hidden =!ElChil.hidden;
+function toggle(id){
+    var liParent = findElementByIndex(id, 'folder');
+    var ulElement = findElement(liParent, 'nestedList');
+    var toggleButtonElement = findElement(liParent, 'toggleButton');
+    var elementImage = findElement(liParent, 'elementImage');
+    if(ulElement.hidden){
+        ulElement.hidden = false;
+        toggleButtonElement.innerText = '-';
+        elementImage.src = 'image/folderOpen.png';
+    }
+    else{
+        ulElement.hidden = true;
+        toggleButtonElement.innerText = '+';
+        elementImage.src = 'image/folderClose.png';
+    }
 }
 
-function add(context) {
+function add(id) {
     var text = prompt('Please write name for new folder');
+    var elementIndex;
+    var folderIndex;
+    var element = findElementByIndex(id,'123');
     if (text) {
-        if(checkName(context,text)) {
+        if(checkName(element,text)) {
             var li = document.createElement('li');
             li.className = 'folder';
-            li.innerHTML = '<span onclick="showHide(this)">+</span>' + text + '<ul hidden="true"><li   type="none" onclick="add(this)">Add</li></ul>';
-            context.parentElement.insertBefore(li, context);
-            saveNewElem(findIndexOfElement(li).slice(0, -1), text);
+            element.insertBefore(li, element.lastElementChild);
+            elementIndex = findIndexOfElement(li,'folder').join('.');
+            folderIndex = elementIndex.slice(0,-2);
+            li.innerHTML = toggleButtonHTML(elementIndex) + '<img data-description="elementImage" src="image/folderClose.png" ><span data-description="elementName" class="name">' + text + '</span><ul class="123" data-index="'+elementIndex+'" data-description="nestedList" hidden="true">'+addButtonHtml(elementIndex)+'</ul>';
+            li.dataset.index = elementIndex;
+            saveNewElem(folderIndex, text);
         }
         else alert('Please choose another name');
     }
 }
 
-function findIndexOfElement(elem){
-    var liAdd = div.getElementsByClassName('folder');
+function findIndexOfElement(elem, classOfElements){
+    var liAdd = div.getElementsByClassName(classOfElements);
     var index = '';
     var count = 1;
     var curElem;
@@ -68,6 +97,17 @@ function findIndexOfElement(elem){
         f(curElem);
     })(elem);
     return index.slice(1).split('.').reverse();
+}
+
+function findElementByIndex(index, classOfElements){
+    var elements = div.getElementsByClassName(classOfElements);
+    var result;
+    for(var i = 0; i < elements.length; i++){
+        if(elements[i].dataset.index == index) {
+            result = elements[i];
+        }
+    }
+    return result;
 }
 
 function findAllParentElements(elements,childElem){
@@ -104,12 +144,22 @@ function saveNewElem(path,name){
 
 function checkName(element, text){
     var isOriginal = true;
-    for(var i =0;i<element.parentElement.childElementCount-1; i++){
-        element=element.previousElementSibling;
-        if(element.childNodes[1].data==text){
+    for(var i =0;i<element.childElementCount-1; i++){
+        if(findElement(element.children[i], 'elementName').innerHTML==text){
             isOriginal = false;
             break;
         }
     }
     return isOriginal;
+}
+
+function findElement(parentElement, description){
+    var elem;
+    for(var i = 0; i < parentElement.childElementCount; i++){
+        if( parentElement.children[i].dataset.description == description) {
+            elem = parentElement.children[i];
+            break;
+        }
+    }
+    return elem;
 }
