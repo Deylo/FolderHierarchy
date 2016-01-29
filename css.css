@@ -1,0 +1,43 @@
+#folderHierarchy ul{
+    list-style-type : none;
+    margin-left: 10px;
+    padding-left: 10px;
+
+}
+
+#folderHierarchy li{
+    padding: 5px;
+
+}
+
+.button{
+    background-color: azure;
+    height: 12px;
+    width: 12px;
+
+    border-radius: 3px;
+    border-color: #000;
+    border-width: 1px;
+    border-style: solid;
+
+    display: inline-block;
+    text-align: center;
+    line-height: 12px;
+}
+
+.button:hover{
+    background-color: aqua;
+}
+
+.name{
+
+}
+
+img{
+    /*border: 1px solid black;*/
+
+    height: 15px;
+    width: 25px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
