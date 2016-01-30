@@ -5,13 +5,6 @@
 var sObj = {};
 var div;
 
-function addButtonHtml(index){
-    return '<li data-description="addButton" onclick="add('+index+')">Add</li>';
-}
-function toggleButtonHTML(index ){
-    return '<div data-description="toggleButton" class="button" onclick="toggle('+index+')">+</div>';
-}
-
 function createList(id,obj){
     sObj=obj||{};
     div = document.getElementById(id);
@@ -21,20 +14,20 @@ function createList(id,obj){
     div.appendChild(fUl);
     var list = '';
     var position='';
-    list = (function f(o){
+    list = (function createHTML(object){
         var count = 1;
         var buf = '';
-        for(var i in o){
+        for(var key in object){
             if(position)
-                position += '.' + count;
+                position += '_' + count;
             else position = '' + count;
-            buf += '<li class = "folder" data-index="'+position+'">'+toggleButtonHTML(position)+'<img data-description="elementImage" src="image/folderClose.png" ><span data-description="elementName" class="name">' + i + '</span><ul class="123" data-index="'+position+'" data-description="nestedList" hidden="true">'+f(o[i])+addButtonHtml(position)+'</ul></li>';
+            buf += '<li class = "folder" data-index="'+position+'">'+toggleButtonHTML(position) + elementIconHTML() + elementNameHTML(key) + nestedListHTML(position, createHTML(object[key])) + '</li>';
             position=position.slice(0,-2);
             count++;
         }
         return buf;
     })(sObj);
-    fUl.innerHTML = list + addButtonHtml(0);
+    fUl.innerHTML = list + addButtonHTML(0);
 }
 
 function toggle(id){
@@ -55,23 +48,26 @@ function toggle(id){
 }
 
 function add(id) {
-    var text = prompt('Please write name for new folder');
+    var text = prompt('Please write name for new folder','');
     var elementIndex;
-    var folderIndex;
     var element = findElementByIndex(id,'123');
-    if (text) {
-        if(checkName(element,text)) {
-            var li = document.createElement('li');
-            li.className = 'folder';
-            element.insertBefore(li, element.lastElementChild);
-            elementIndex = findIndexOfElement(li,'folder').join('.');
-            folderIndex = elementIndex.slice(0,-2);
-            li.innerHTML = toggleButtonHTML(elementIndex) + '<img data-description="elementImage" src="image/folderClose.png" ><span data-description="elementName" class="name">' + text + '</span><ul class="123" data-index="'+elementIndex+'" data-description="nestedList" hidden="true">'+addButtonHtml(elementIndex)+'</ul>';
-            li.dataset.index = elementIndex;
-            saveNewElem(folderIndex, text);
-        }
-        else alert('Please choose another name');
+    if (!text) {
+        return;
     }
+    if(text.length > 255){
+        alert('Too long name');
+        return;
+    }
+    if(checkName(element,text)) {
+        var li = document.createElement('li');
+        li.className = 'folder';
+        element.insertBefore(li, element.lastElementChild);
+        elementIndex = findIndexOfElement(li, 'folder').join('_');
+        li.innerHTML = toggleButtonHTML(elementIndex) + elementIconHTML() + elementNameHTML(text) + nestedListHTML(elementIndex);
+        li.dataset.index = elementIndex;
+        saveNewElem(li, text);
+    }
+    else alert('Please choose another name');
 }
 
 function findIndexOfElement(elem, classOfElements){
@@ -86,7 +82,7 @@ function findIndexOfElement(elem, classOfElements){
             count++
         }
         else{
-            index += '.'+count;
+            index += '_'+count;
             count = 1;
             if(pElements.length)
                 curElem = pElements.pop();
@@ -96,7 +92,7 @@ function findIndexOfElement(elem, classOfElements){
         }
         f(curElem);
     })(elem);
-    return index.slice(1).split('.').reverse();
+    return index.slice(1).split('_').reverse();
 }
 
 function findElementByIndex(index, classOfElements){
@@ -119,26 +115,22 @@ function findAllParentElements(elements,childElem){
     return parentElements;
 }
 
-function saveNewElem(path,name){
-    var count = 1 ;
-    var p = path[0];
-    var iter = 0;
-    (function f(o,ind){
-        iter++;
-        count = 1;
-        if(iter-1 == path.length) {
-            o[name] = {};
+function saveNewElem(elem,name){
+    var allFolder = div.getElementsByClassName('folder');
+    var allParentFolder = findAllParentElements(allFolder, elem);
+    var key;
+    (function save(obj){
+        if(!allParentFolder.length){
+            obj[name]={};
             return;
         }
-        for (var i in o ){
-            if(count == ind) {
-                p = path[iter];
-                f(o[i], p);
-                return;
+        key = findElement(allParentFolder.shift(), 'elementName').innerText;
+        for(var k in obj){
+            if(k == key){
+                save(obj[k]);
             }
-            else count ++;
         }
-    })(sObj,p);
+    })(sObj);
     console.log(sObj);
 }
 
@@ -162,4 +154,26 @@ function findElement(parentElement, description){
         }
     }
     return elem;
+}
+
+function addButtonHTML(index){
+    return '<li data-description="addButton" onclick="add(\''+index+'\')">Add</li>';
+}
+
+function toggleButtonHTML(index){
+    return '<div data-description="toggleButton" class="button" onclick="toggle(\''+index+'\')">+</div>';
+}
+
+function elementIconHTML(){
+    return '<img data-description="elementImage" src="image/folderClose.png" >';
+}
+
+function elementNameHTML(text){
+    return '<span data-description="elementName" class="name">' + text + '</span>';
+
+}
+
+function nestedListHTML(index, HTML){
+    var nestedElement = HTML || '';
+    return '<ul class="123" data-index="'+index+'" data-description="nestedList" hidden="true">'+nestedElement+addButtonHTML(index)+'</ul>';
 }

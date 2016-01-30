@@ -16,9 +16,7 @@
     width: 12px;
 
     border-radius: 3px;
-    border-color: #000;
-    border-width: 1px;
-    border-style: solid;
+    border: 1px solid #000;
 
     display: inline-block;
     text-align: center;
