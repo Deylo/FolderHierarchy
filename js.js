@@ -79,7 +79,7 @@ function add(index, isFile) {
     else
         text = prompt('Please write name for new folder', '');
 
-    text = text.trim().replace(/\s+/,' ');
+    text = text.trim().replace(/\s+/g,' ');
     displayedText = text;
 
     if(!checkName(element,text))
@@ -167,7 +167,7 @@ function checkName(element, text){
     if (!text) {
         return false;
     }
-    if(text.search(/[*|\\:"<>?/]/i) != -1){
+    if(text.search(/[*|\\:"<>?/]/) != -1){
         alert('The folder name contains characters that are not permitted ( * / | \\ : " < > ? )');
         return false;
     }
@@ -246,7 +246,7 @@ function ownContextMenu(){
             var nameFolder = event.target.innerHTML;
             var newName = prompt('Please write new name', '');
 
-            newName = newName().replace(/\s+/,' ');
+            newName = newName().replace(/\s+/g,' ');
             if(checkName(nestedList, newName)){
                 saveNewElem(liFolder, nameFolder, false, newName);
                 event.target.innerHTML = newName;
