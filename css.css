@@ -5,6 +5,13 @@
 
 }
 
+#folderHierarchy{
+    background-color: wheat;
+    width: 500px;
+    height: 500px;
+    overflow: auto;
+}
+
 #folderHierarchy li{
     padding: 5px;
 
@@ -44,4 +51,22 @@ img{
 
 [data-index-add-button]{
     display: inline-block;
+}
+
+.contextMenu{
+    position: fixed;
+    z-index: 999;
+    width: 100px;
+    background-color: azure;
+    border: 1px solid black;
+    cursor: pointer;
+}
+
+.background{
+    position: absolute;
+    z-index: 998;
+    height: 100%;
+    width: 100%;
+    left: 0;
+    top: 0;
 }

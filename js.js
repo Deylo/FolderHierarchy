@@ -61,7 +61,7 @@ function toggle(id){
 }
 
 function add(id) {
-    var text = prompt('Please write name for new folder','');
+    var text = prompt('Please write name for new folder','').trim();
     var elInd;
     var element = div.querySelector('[data-index-nested-list="' + id + '"]');
     var elementName;
@@ -71,7 +71,7 @@ function add(id) {
         return;
     var li = document.createElement('li');
     element.insertBefore(li, element.lastElementChild);
-    elInd = findIndexOfElement(li,id);
+    elInd = findElementIndex(li,id);
     li.innerHTML = toggleButtonHTML(elInd) + elementIconHTML(elInd) + elementNameHTML(elInd) + nestedListHTML(elInd);
     li.dataset.indexFolder = elInd;
     elementName = div.querySelector('[data-index-element-name="' + elInd + '"]');
@@ -85,7 +85,7 @@ function add(id) {
     saveNewElem(li, text, true);
 }
 
-function findIndexOfElement(elem,parentId){
+function findElementIndex(elem, parentId){
     var index = '';
     var curIndex;
     var curElem = elem.previousElementSibling;
@@ -139,12 +139,12 @@ function findAllParentElements(elements, childElem){
 
 function checkName(element, text){
     var correctName = true;
-    text = text.trim();
+
     if (!text) {
         return false;
     }
     if(text.search(/[*|\\:"<>?/]/i) != -1){
-        alert("The folder name contains characters that are not permitted");
+        alert('The folder name contains characters that are not permitted ( * / | \\ : " < > ? )');
         return false;
     }
 
@@ -211,7 +211,7 @@ function ownContextMenu(){
             var nestedList = div.querySelector('[data-index-nested-list="' + indexElementName.slice(0,-2) + '"]');
             var liFolder = div.querySelector('[data-index-folder="' + indexElementName + '"]');
             var nameFolder = event.target.innerHTML;
-            var newName = prompt('Please write new name','');
+            var newName = prompt('Please write new name','').trim();
             if(checkName(nestedList, newName)){
                 saveNewElem(liFolder, nameFolder, false, newName);
                 event.target.innerHTML = newName;
@@ -222,12 +222,7 @@ function ownContextMenu(){
         return false;
 
         function createBackgroundDiv() {
-            backgroundDiv.style.position = 'absolute';
-            backgroundDiv.style.zIndex = 998;
-            backgroundDiv.style.height = '100%';
-            backgroundDiv.style.width = '100%';
-            backgroundDiv.style.left = '0px';
-            backgroundDiv.style.top = '0px';
+            backgroundDiv.className = 'background';
             backgroundDiv.onclick = function () {
                 removeContextmenu();
             };
@@ -239,12 +234,7 @@ function ownContextMenu(){
         }
 
         function createContextDiv() {
-            contextDiv.style.position = 'fixed';
-            contextDiv.style.zIndex = 999;
-            contextDiv.style.width = '100px';
-            contextDiv.style.backgroundColor = 'azure';
-            contextDiv.style.border = '1px solid black';
-            contextDiv.style.cursor = 'pointer';
+            contextDiv.className = 'contextMenu';
             if (screen.width - (event.clientX + 100) >= 0)
                 contextDiv.style.left = event.clientX + 'px';
             else contextDiv.style.right = '0px';
