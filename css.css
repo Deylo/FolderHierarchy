@@ -40,13 +40,25 @@
 
 }
 
-img{
+[data-description="fileImage"]{
+    margin-left: 23px;
+    margin-right: 13px;
+}
+
+[data-description="toggleButton"] ~ img{
     /*border: 1px solid black;*/
 
     height: 15px;
     width: 25px;
     margin-left: 5px;
     margin-right: 5px;
+}
+
+ img{
+     height: 15px;
+     width: 12px;
+     margin-left: 5px;
+     margin-right: 5px;
 }
 
 [data-index-add-button]{
