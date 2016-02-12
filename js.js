@@ -23,10 +23,10 @@ function createList(id,obj){
 
             if(object[key] == 'file')
                 buf += '<li data-index-folder="' + index + '">'  + elementIconHTML(index, true) +
-                    elementNameHTML(index, index) + '</li>';
+                    elementNameHTML(index, true, index) + '</li>';
             else
-                buf += '<li data-index-folder="' + index + '">' + toggleButtonHTML(index) + elementIconHTML(index) +
-                    elementNameHTML(index, index) + nestedListHTML(index, createHTML(object[key])) + '</li>';
+                buf += '<li data-index-folder="' + index + '">' + toggleButtonHTML(index) + elementIconHTML(index, false) +
+                    elementNameHTML(index, false, index) + nestedListHTML(index, createHTML(object[key])) + '</li>';
 
             cash[index] = key;
             index = index.slice(0,-2);
@@ -39,12 +39,12 @@ function createList(id,obj){
     nameArray = div.getElementsByClassName('name');
 
     for(var i = 0; i < nameArray.length; i++){
-        if (cash[nameArray[i].innerText].length > 15) {
-            nameArray[i].title = cash[nameArray[i].innerText];
-            nameArray[i].innerText = cash[nameArray[i].innerText].slice(0,15) + ' ...';
+        if (cash[nameArray[i].textContent].length > 15) {
+            nameArray[i].title = cash[nameArray[i].textContent];
+            nameArray[i].textContent = cash[nameArray[i].textContent].slice(0,15) + ' ...';
             continue;
         }
-        nameArray[i].innerText = cash[nameArray[i].innerText];
+        nameArray[i].textContent = cash[nameArray[i].textContent];
     }
     ownContextMenu();
 }
@@ -56,13 +56,13 @@ function toggle(index, needOpen){
 
     if(ulElement.hidden || needOpen){
         ulElement.hidden = false;
-        toggleButtonElement.innerText = '-';
-        elementIcon.src = 'image/folderOpen.png';
+        toggleButtonElement.textContent = '-';
+        elementIcon.src = 'img/folderOpen.png';
     }
     else{
         ulElement.hidden = true;
-        toggleButtonElement.innerText = '+';
-        elementIcon.src = 'image/folderClose.png';
+        toggleButtonElement.textContent = '+';
+        elementIcon.src = 'img/folderClose.png';
     }
 }
 
@@ -90,9 +90,9 @@ function add(index, isFile) {
     elInd = findElementIndex(li,index);
 
     if(isFile)
-        li.innerHTML = elementIconHTML(elInd, true) + elementNameHTML(elInd);
+        li.innerHTML = elementIconHTML(elInd, true) + elementNameHTML(elInd, true);
     else
-        li.innerHTML = toggleButtonHTML(elInd) + elementIconHTML(elInd) + elementNameHTML(elInd) + nestedListHTML(elInd);
+        li.innerHTML = toggleButtonHTML(elInd) + elementIconHTML(elInd, false) + elementNameHTML(elInd, false) + nestedListHTML(elInd);
 
     li.dataset.indexFolder = elInd;
     elementName = div.querySelector('[data-index-element-name="' + elInd + '"]');
@@ -102,7 +102,7 @@ function add(index, isFile) {
         elementName.title = text;
     }
 
-    elementName.innerText = displayedText;
+    elementName.textContent = displayedText;
     saveNewElem(li, text, true, false, isFile);
 }
 
@@ -142,7 +142,7 @@ function saveNewElem(elem, name, saveEl, newName, isFile){
             delete obj[name];
             return;
         }
-        key = findElement(allParentFolder.shift(), 'elementName').innerText;
+        key = findElement(allParentFolder.shift(), 'elementName').textContent;
         for(var k in obj){
             if(k == key){
                 save(obj[k]);
@@ -311,24 +311,30 @@ function toggleButtonHTML(index){
            '" class="button" onclick="toggle(\'' + index + '\')">+</div>';
 }
 
+function sortList(index){
+    var reg = new RegExp(index + '_\d\b','g')
+    var elem = div.querySelectorAll('[]');
+}
+
 function elementIconHTML(index, isFile){
     var src = '';
     var description = '';
     if(isFile) {
-        src = 'image/file.png';
+        src = 'img/file.png';
         description = 'fileImage';
     }
     else {
-        src = 'image/folderClose.png';
+        src = 'img/folderClose.png';
         description = 'folderImage';
     }
 
     return '<img data-description="' + description + '" data-index-element-icon="' + index + '" src="' + src + '" >';
 }
 
-function elementNameHTML(index, text){
-    var name = text || '';
-    return '<span data-description="elementName" data-index-element-name="' + index + '" class="name">' + name + '</span>';
+function elementNameHTML(index, isFile, text){
+    var description = '';
+
+    return '<span data-description="elementName" data-index-element-name="' + index + '" class="name">' + text + '</span>';
 }
 
 function nestedListHTML(index, HTML){
