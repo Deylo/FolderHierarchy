@@ -12,18 +12,19 @@
     <div  id = 'folderHierarchy'></div>
     <script>
         var obj = {
-            '1' : {
-                '1.1' : {
+            'fishes' : {
+                'carp' : {
                     '1.1.1' : {'tyty' : {}}
                 },
                 '1.2' :{
 
                 }
             },
-            '2' : {
+            'animals' : {
                 '2.1.1' : 'file'
             },
-            '3' : 'file'
+            'readme' : 'file',
+            '5' : 'file'
         };
 
         document.onload=createList('folderHierarchy', obj);
