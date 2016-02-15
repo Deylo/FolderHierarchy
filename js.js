@@ -1,19 +1,19 @@
-
-var sObj = {};
-var div;
-
 function createList(id,obj){
-    var nameArray;
+    var namesArray;
     var list = '';
     var cash = {};
+    var nestedLists = [];
     var index = 0;
-    var fUl = document.createElement('ul');
+    var mainUl = document.createElement('ul');
+    var sObj = {};
+    var mainDiv;
 
     sObj = obj || {};
-    div = document.getElementById(id);
-    div.className = 'mainDiv';
-    fUl.dataset.indexNestedList = '0';
-    div.appendChild(fUl);
+    mainDiv = document.getElementById(id);
+    mainDiv.dataset.description = 'mainDiv';
+    mainUl.dataset.index = '0';
+    mainUl.dataset.description = 'nestedList';
+    mainDiv.appendChild(mainUl);
 
     list = (function createHTML(object){
         var buf = '';
@@ -23,11 +23,9 @@ function createList(id,obj){
             index += '_' + count;
 
             if(object[key] == 'file')
-                buf += '<li data-index-folder="' + index + '">'  + elementIconHTML(index, true) +
-                    elementNameHTML(index, true, index) + '</li>';
+                buf += listElementHTML(index, true, index);
             else
-                buf += '<li data-index-folder="' + index + '">' + toggleButtonHTML(index) + elementIconHTML(index, false) +
-                    elementNameHTML(index, false, index) + nestedListHTML(index, createHTML(object[key])) + '</li>';
+                buf += listElementHTML(index, false, index, createHTML(object[key]));
 
             cash[index] = key;
             index = index.replace(/_\d+\b/,'');
@@ -36,395 +34,510 @@ function createList(id,obj){
         return buf;
     })(sObj);
 
-    fUl.innerHTML = list;
-    nameArray = div.getElementsByClassName('name');
+    mainUl.innerHTML = list;
+    namesArray = mainDiv.getElementsByClassName('name');
 
-    for(var i = 0; i < nameArray.length; i++){
-        if (cash[nameArray[i].textContent].length > 15) {
-            nameArray[i].title = cash[nameArray[i].textContent];
-            nameArray[i].textContent = cash[nameArray[i].textContent].slice(0,15) + ' ...';
+    for(var i = 0; i < namesArray.length; i++){
+        if (cash[namesArray[i].textContent].length > 15) {
+            namesArray[i].title = cash[namesArray[i].textContent];
+            namesArray[i].textContent = cash[namesArray[i].textContent].slice(0,15) + ' ...';
             continue;
         }
-        nameArray[i].textContent = cash[nameArray[i].textContent];
+        namesArray[i].textContent = cash[namesArray[i].textContent];
     }
 
-    var hh = div.querySelectorAll('[data-index-nested-list]');
-    var ss;
-    for(var i = 1; i < hh.length; i++){
-        if(hh[i].childElementCount) {
-            ss = div.querySelector('[data-index-toggle-button="' + hh[i].dataset.indexNestedList + '"]');
-            ss.classList.remove('unvisible');
+    nestedLists = mainDiv.querySelectorAll('[data-index][data-description="nestedList"]');
+    for(var i = 1; i < nestedLists.length; i++){
+        if(nestedLists[i].childElementCount) {
+            mainDiv.querySelector('[data-description="toggleButton"][data-index="' + nestedLists[i].dataset.index + '"]').classList.remove('unvisible');
         }
     }
 
     sortList(true);
-    ownContextMenu();
-}
+    checkMainDivHeight();
+    initializeMainDivEvent();
 
-function toggle(index, needOpen){
-    var ulElement = div.querySelector('[data-index-nested-list="' + index + '"]');
-    var toggleButtonElement = div.querySelector('[data-index-toggle-button="' + index + '"]');
-    var elementIcon = div.querySelector('[data-index-element-icon="' + index + '"]');
+    function toggle(index, needOpen){
+        var ulElement = mainDiv.querySelector('[data-index="' + index + '"][data-description="nestedList"]');
+        var toggleButtonElement = mainDiv.querySelector('[data-index="' + index + '"][data-description="toggleButton"]');
+        var elementIcon = mainDiv.querySelector('[data-index="' + index + '"][data-description$="Image"]');
 
-    if(ulElement.hidden || needOpen){
-        ulElement.hidden = false;
-        toggleButtonElement.textContent = '-';
-        elementIcon.src = 'img/folderOpen.png';
-    }
-    else{
-        ulElement.hidden = true;
-        toggleButtonElement.textContent = '+';
-        elementIcon.src = 'img/folderClose.png';
-    }
-}
+        if(ulElement.hidden || needOpen){
+            ulElement.hidden = false;
+            toggleButtonElement.src = 'img/minus.png';
+            elementIcon.src = 'img/folderOpen.png';
+        }
+        else{
+            ulElement.hidden = true;
+            toggleButtonElement.src = 'img/plus.png';
+            elementIcon.src = 'img/folderClose.png';
+        }
 
-function add(index, isFile) {
-    var elementName;
-    var li;
-    var elInd;
-    var toggleButton;
-    var displayedText = '';
-    var text = '';
-    var element = div.querySelector('[data-index-nested-list="' + index + '"]');
-
-    if(isFile)
-        text = prompt('Please write name for new file', '');
-    else
-        text = prompt('Please write name for new folder', '');
-
-    text = text.trim().replace(/\s+/g,' ');
-    displayedText = text;
-
-    if(!checkName(element,text))
-        return;
-
-    toggleButton = div.querySelector('[data-index-toggle-button="' + index + '"]');
-    if(toggleButton){
-        toggleButton.classList.remove('unvisible');
+        checkMainDivHeight();
     }
 
-    li = document.createElement('li');
-    element.appendChild(li);
-    elInd = findElementIndex(index);
+    function add(parentIndex, isFile) {
+        var elementName;
+        var li;
+        var elementIndex;
+        var toggleButton;
+        var displayedText = '';
+        var text = '';
+        var element = mainDiv.querySelector('[data-index="' + parentIndex + '"][data-description="nestedList"]');
 
-    if(isFile)
-        li.innerHTML = elementIconHTML(elInd, true) + elementNameHTML(elInd, true);
-    else
-        li.innerHTML = toggleButtonHTML(elInd) + elementIconHTML(elInd, false) + elementNameHTML(elInd, false) + nestedListHTML(elInd);
+        if(isFile)
+            text = prompt('Please write name for new file', '');
+        else
+            text = prompt('Please write name for new folder', '');
 
-    li.dataset.indexFolder = elInd;
-    elementName = div.querySelector('[data-index-element-name="' + elInd + '"]');
+        if(!text)
+            return;
 
-    if(text.length > 15){
-        displayedText = text.slice(0,15) + ' ...';
-        elementName.title = text;
+        text = text.trim().replace(/\s+/g,' ');
+        displayedText = text;
+
+        if(!checkName(element,text))
+            return;
+
+        toggleButton = mainDiv.querySelector('[data-description="toggleButton"][data-index="' + parentIndex + '"]');
+        if(toggleButton){
+            toggleButton.classList.remove('unvisible');
+            toggle(parentIndex, true);
+        }
+
+        li = document.createElement('li');
+        elementIndex = findElementIndex(parentIndex);
+        element.appendChild(li);
+
+        if(isFile)
+            li.outerHTML = listElementHTML(elementIndex, true);
+        else
+            li.outerHTML = listElementHTML(elementIndex, false);
+        li = element.querySelector('[data-index="' + elementIndex + '"][data-description="listElement"]');
+        elementName = mainDiv.querySelector('[data-index="' + elementIndex + '"][data-description$="Name"]');
+
+        if(text.length > 15){
+            displayedText = text.slice(0,15) + ' ...';
+            elementName.title = text;
+        }
+
+        elementName.textContent = displayedText;
+
+        sortList(false, parentIndex);
+        checkMainDivHeight();
+        saveNewElem(li, text, true, false, isFile);
     }
 
-    elementName.textContent = displayedText;
-    sortList(false, index);
-    saveNewElem(li, text, true, false, isFile);
-}
+    function findElementIndex(parentIndex){
+        var parentUl = mainDiv.querySelector('[data-index="' + parentIndex + '"][data-description="nestedList"]');
 
-function findElementIndex(parentIndexUl){
-    var parentUl = div.querySelector('[data-index-nested-list="' + parentIndexUl + '"]');
+        for(var i = 1;; i++){
+            if(!parentUl.querySelector('[data-index="' + parentIndex + '_' + i + '"][data-description="listElement"]'))
+                break;
+        }
+        return parentIndex + '_' + i;
 
-    for(var i = 1;; i++){
-        if(!parentUl.querySelector('[data-index-folder="' + parentIndexUl + '_' + i + '"]'))
-            break;
     }
-    return parentIndexUl + '_' + i;
 
-}
+    function saveNewElem(elem, name, saveEl, newName, isFile){
+        var key;
+        var index;
+        var nName = newName || '';
+        var allFolder = mainDiv.querySelectorAll('[data-index][data-description="listElement"]');
+        var allParentFolder = findAllParentElements(allFolder, elem);
 
-function saveNewElem(elem, name, saveEl, newName, isFile){
-    var allFolder = div.querySelectorAll('[data-index-folder]');
-    var allParentFolder = findAllParentElements(allFolder, elem);
-    var key;
-    var nName = newName || '';
-
-    (function save(obj){
-        if(!allParentFolder.length){
-            if(saveEl) {
-                if(isFile)
-                    obj[name] = 'file';
-                else
-                    obj[name] = {};
+        (function save(obj){
+            if(!allParentFolder.length){
+                if(saveEl) {
+                    if(isFile)
+                        obj[name] = 'file';
+                    else
+                        obj[name] = {};
+                    return;
+                }
+                if(nName)
+                    obj[nName] = obj[name];
+                delete obj[name];
                 return;
             }
-            if(nName)
-                obj[nName] = obj[name];
-            delete obj[name];
-            return;
+            index = allParentFolder.shift().dataset.index;
+            key = mainDiv.querySelector('[data-index="' + index + '" ][data-description$="Name"]').textContent;
+            for(var k in obj){
+                if(k == key){
+                    save(obj[k]);
+                }
+            }
+        })(sObj);
+    }
+
+    function findAllParentElements(elements, childElem){
+        var parentElements = [];
+        for(var i = 0; i < elements.length; i++){
+            if(elements[i].compareDocumentPosition(childElem) & 16)
+                parentElements.push(elements[i]);
         }
-        key = div.querySelector('[data-index-element-name="' + allParentFolder.shift().dataset.indexFolder + '" ]').textContent;
-        for(var k in obj){
-            if(k == key){
-                save(obj[k]);
+        return parentElements;
+    }
+
+    function checkName(element, text){
+        var correctName = true;
+        var index = '';
+
+        if (!text) {
+            return false;
+        }
+        
+        if(text.search(/[*|\\:"<>?/]/) != -1){
+            alert('The folder name contains characters that are not permitted ( * / | \\ : " < > ? )');
+            return false;
+        }
+
+        if(text.length > 255){
+            alert('Too long name');
+            return false;
+        }
+        
+        for(var i = 0; i < element.childElementCount; i++){
+            index = element.children[i].dataset.index;
+            if(mainDiv.querySelector('[data-index="' + index + '" ][data-description$="Name"]').textContent == text){
+                correctName = false;
+                alert('The name is already exist');
+                break;
             }
         }
-    })(sObj);
-    console.log(sObj);
-}
-
-function findAllParentElements(elements, childElem){
-    var parentElements = [];
-    for(var i = 0; i < elements.length; i++){
-        if(elements[i].compareDocumentPosition(childElem) & 16)
-            parentElements.push(elements[i]);
-    }
-    return parentElements;
-}
-
-function checkName(element, text){
-    var correctName = true;
-
-    if (!text) {
-        return false;
-    }
-    if(text.search(/[*|\\:"<>?/]/) != -1){
-        alert('The folder name contains characters that are not permitted ( * / | \\ : " < > ? )');
-        return false;
+        return correctName;
     }
 
-    if(text.length > 255){
-        alert('Too long name');
-        return false;
-    }
-    for(var i = 0; i < element.childElementCount; i++){
-        if(div.querySelector('[data-index-element-name="' + element.children[i].dataset.indexFolder + '" ]').textContent == text){
-            correctName = false;
-            alert('The name is already exist');
-            break;
+    function sortList(sortAll, index){
+        var allUl;
+
+        if(sortAll) {
+            allUl = mainDiv.querySelectorAll('[data-index][data-description="nestedList"]');
+            for(var i =0; i< allUl.length; i++){
+                sortCurrentLevel(allUl[i].dataset.index);
+            }
+        }
+        else
+            sortCurrentLevel(index);
+
+        function sortCurrentLevel(currentIndex) {
+            var elemLi, parentUl, nameElement, elementIndex, i;
+            var cash = {};
+            var elemNames = [];
+            var folderNames = [];
+            var fileNames = [];
+
+            parentUl = mainDiv.querySelector('[data-index="' + currentIndex + '"][data-description="nestedList"]');
+            
+            for (i = 1; ; i++) {
+                elementIndex = '' + currentIndex + '_' + i;
+                elemLi = mainDiv.querySelector('[data-index="' + elementIndex + '"][data-description="listElement"]');
+
+                if (!elemLi)
+                    break;
+                nameElement = elemLi.querySelector('[data-index="' + elementIndex + '"][data-description$="Name"]');
+
+                if (nameElement.dataset.description == 'fileName')
+                    fileNames.push(nameElement.textContent.toLowerCase());
+                else
+                    folderNames.push(nameElement.textContent.toLowerCase());
+
+                cash[nameElement.textContent.toLowerCase()] = elemLi;
+            }
+
+            if(i == 1)
+                return;
+            fileNames.sort();
+            folderNames.sort();
+            elemNames = folderNames.concat(fileNames);
+
+            for (i = 0; i < elemNames.length; i++) {
+                parentUl.appendChild(cash[elemNames[i]]);
+            }
         }
     }
-    return correctName;
-}
 
-function sortList(sortAll, index){
-    var allUl;
+    function initializeMainDivEvent(){
+        var currentElement = null;
 
-    if(sortAll) {
-        allUl = div.querySelectorAll('[data-index-nested-list]');
-        for(var i =0; i< allUl.length; i++){
-            sortCurrentLevel(allUl[i].dataset.indexNestedList);
-        }
-    }
-    else
-        sortCurrentLevel(index);
+        mainDiv.onmouseover = function(e){
+            var target = e.target;
+            var description = target.dataset.description;
 
-    function sortCurrentLevel(currentIndex) {
-        var elemLi, parentUl, nameElement;
-        var elementIndex = '';
-        var cash = {};
-        var elemNames = [];
-        var folderNames = [];
-        var fileNames = [];
+            if(currentElement || description == 'nestedList' || description == 'toggleButton')
+                return;
 
-        parentUl = div.querySelector('[data-index-nested-list="' + currentIndex + '"]');
-        for (var i = 1; ; i++) {
-            elementIndex = '' + currentIndex + '_' + i;
-            elemLi = div.querySelector('[data-index-folder="' + elementIndex + '"]');
+            while(target != e.currentTarget ){
+                if(description == 'listElement')
+                    break;
+                target = target.parentNode;
+            }
+            if(target == e.currentTarget)
+                return;
 
-            if (!elemLi)
-                break;
-            nameElement = elemLi.querySelector('[data-index-element-name="' + elementIndex + '"]');
+            currentElement = target;
+            currentElement.classList.add('highlight');
+        };
+        mainDiv.onmouseout = function(e){
+            var relatedTarget = e.relatedTarget;
+            var description;
 
-            if (nameElement.dataset.description == 'fileName')
-                fileNames.push(nameElement.textContent.toLowerCase());
-            else
-                folderNames.push(nameElement.textContent.toLowerCase());
+            if (!currentElement )
+                return;
 
-            cash[nameElement.textContent.toLowerCase()] = elemLi;
-        }
+            if (relatedTarget) {
+                description = e.relatedTarget.dataset.description;
+                while (relatedTarget) {
+                    if (relatedTarget == currentElement)
+                        return;
+                    if(description == 'listElement' || description == 'nestedList' || description == 'toggleButton')
+                        break;
+                    relatedTarget = relatedTarget.parentElement;
+                }
+            }
+            currentElement.classList.remove('highlight');
+            currentElement = null;
+        };
+        mainDiv.ondblclick = function(e){
+            var index = e.target.dataset.index;
+            var nestedList;
 
-        if(i == 1)
-            return;
-        fileNames.sort();
-        folderNames.sort();
-        elemNames = folderNames.concat(fileNames);
+            if(index == 0)
+                return;
 
-        for (var i = 0; i < elemNames.length; i++) {
-            parentUl.appendChild(cash[elemNames[i]]);
-        }
-    }
-}
+            nestedList = mainDiv.querySelector('[data-index="' + index + '"][data-description="nestedList"]');
 
-function ownContextMenu(){
+            if(nestedList && nestedList.firstElementChild)
+                    toggle(index);
+        };
+        mainDiv.onclick = function(e){
 
-    div.oncontextmenu = function(event){
-        var contextDiv;
-        var backgroundDiv;
+            if(e.target.dataset.description != 'toggleButton')
+                return;
 
-        var createFolder = {};
-        var deleteElement = {};
-        var renameElement = {};
-        var createFile = {};
+            toggle(e.target.dataset.index);
+        };
+        mainDiv.oncontextmenu = function(event){
+            var contextDiv;
+            var backgroundDiv;
+            var index = '';
 
-        if(event.target == event.currentTarget){
+            var createFolder = {};
+            var deleteElement = {};
+            var renameElement = {};
+            var createFile = {};
+
+            event.preventDefault();
+
+            if(event.target == mainDiv){
+                contextDiv = document.createElement('div');
+                backgroundDiv = document.createElement('div');
+
+                createFolder.elementName = 'Create folder';
+                createFolder.func = function () {
+                    add(0);
+                };
+                addNewElementToContextmenu(createFolder);
+
+                createFile.elementName = 'Create file';
+                createFile.func = function () {
+                    add(0, true);
+                };
+                addNewElementToContextmenu(createFile);
+
+                createBackgroundDiv();
+                createContextDiv();
+            }
+
+            index = event.target.dataset.index;
+
+            if(!index || event.target.dataset.description == 'nestedList')
+                return;
+
             contextDiv = document.createElement('div');
             backgroundDiv = document.createElement('div');
 
-            createFolder.elementName = 'Create folder';
-            createFolder.func = function () {
-                add(0);
-            };
-            addNewElementToContextmenu(createFolder);
+            if(mainDiv.querySelector('[data-index="' + index + '"][data-description="folderName"]')) {
+                createFolder.elementName = 'Create folder';
+                createFolder.func = function () {
+                    add(index);
+                };
+                addNewElementToContextmenu(createFolder);
 
-            createFile.elementName = 'Create file';
-            createFile.func = function () {
-                add(0, true);
+                createFile.elementName = 'Create file';
+                createFile.func = function () {
+                    add(index, true);
+                };
+                addNewElementToContextmenu(createFile);
+            }
+
+            deleteElement.elementName = 'Delete';
+            deleteElement.func = function(){
+                var toggleButton;
+                var nestedList;
+                var parentIndex;
+                var liFolder = mainDiv.querySelector('[data-index="' + index + '"][data-description="listElement"]');
+                var nameFolder = mainDiv.querySelector('[data-index="' + index + '"][data-description$="Name"]').innerHTML;
+
+                saveNewElem(liFolder, nameFolder, false, false);
+                liFolder.remove();
+                checkMainDivHeight();
+                parentIndex = index.replace(/_\d+\b/,'');
+                nestedList = mainDiv.querySelector('[data-index="' + parentIndex + '"][data-description="nestedList"]');
+                toggleButton = mainDiv.querySelector('[data-index="' + parentIndex + '"][data-description="toggleButton"]');
+
+                if(toggleButton && !nestedList.childElementCount){
+                    toggleButton.classList.add('unvisible');
+                    mainDiv.querySelector('[data-index="' + parentIndex + '"][data-description$="Image"]').src = 'img/folderClose.png';
+                }
             };
-            addNewElementToContextmenu(createFile);
+            addNewElementToContextmenu(deleteElement);
+
+            renameElement.elementName = 'Rename';
+            renameElement.func = function(){
+                var parentIndex = index.replace(/_\d+\b/,'');
+                var nestedList = mainDiv.querySelector('[data-index="' + parentIndex + '"][data-description="nestedList"]');
+                var liFolder = mainDiv.querySelector('[data-index="' + index + '"][data-description="listElement"]');
+                var nameFolder = mainDiv.querySelector('[data-index="' + index + '"][data-description$="Name"]').innerHTML;
+                var newName = prompt('Please write new name', '');
+
+                if(!newName)
+                    return;
+
+                newName = newName.trim().replace(/\s+/g,' ');
+
+                if(checkName(nestedList, newName)){
+                    saveNewElem(liFolder, nameFolder, false, newName);
+                    mainDiv.querySelector('[data-index="' + index + '"][data-description$="Name"]').innerHTML = newName;
+                    sortList(index);
+                }
+            };
+            addNewElementToContextmenu(renameElement);
 
             createBackgroundDiv();
             createContextDiv();
 
-        }
-
-        if(!event.target.dataset.indexElementName)
-            return false;
-
-        contextDiv = document.createElement('div');
-        backgroundDiv = document.createElement('div');
-
-        createBackgroundDiv();
-        createContextDiv();
-
-        if(event.target.dataset.description == 'folderName') {
-            createFolder.elementName = 'Create folder';
-            createFolder.func = function () {
-                var index = event.target.dataset.indexElementName;
-                add(index);
-                toggle(index, true);
-            };
-            addNewElementToContextmenu(createFolder);
-
-            createFile.elementName = 'Create file';
-            createFile.func = function () {
-                var index = event.target.dataset.indexElementName;
-                add(index, true);
-                toggle(index, true);
-            };
-            addNewElementToContextmenu(createFile);
-        }
-        deleteElement.elementName = 'Delete';
-        deleteElement.func = function(){
-            var toggleButton;
-            var nestedList;
-            var parentIndex = '';
-            var index = event.target.dataset.indexElementName;
-            var liFolder = div.querySelector('[data-index-folder="' + index + '"]');
-            var nameFolder = event.target.innerHTML;
-
-            saveNewElem(liFolder, nameFolder, false, false);
-            liFolder.remove();
-            parentIndex = index.replace(/_\d+\b/,'');
-            nestedList = div.querySelector('[data-index-nested-list="' + parentIndex + '"]');
-            toggleButton = div.querySelector('[data-index-toggle-button="' + parentIndex + '"]');
-
-            if(toggleButton && !nestedList.childElementCount){
-                toggleButton.classList.add('unvisible');
-                div.querySelector('[data-index-element-icon="' + parentIndex + '"]').src = 'img/folderClose.png';
+            function createBackgroundDiv() {
+                backgroundDiv.className = 'background';
+                backgroundDiv.onclick = function () {
+                    removeContextmenu();
+                };
+                backgroundDiv.oncontextmenu = function () {
+                    removeContextmenu();
+                    return false;
+                };
+                document.body.appendChild(backgroundDiv);
             }
-        };
-        addNewElementToContextmenu(deleteElement);
 
-        renameElement.elementName = 'Rename';
-        renameElement.func = function(){
-            var indexElementName = event.target.dataset.indexElementName;
-            var nestedList = div.querySelector('[data-index-nested-list="' + indexElementName.replace(/_\d+\b/,'') + '"]');
-            var liFolder = div.querySelector('[data-index-folder="' + indexElementName + '"]');
-            var nameFolder = event.target.innerHTML;
-            var newName = prompt('Please write new name', '');
+            function createContextDiv() {
 
-            newName = newName.replace(/\s+/g,' ');
-            if(checkName(nestedList, newName)){
-                saveNewElem(liFolder, nameFolder, false, newName);
-                event.target.innerHTML = newName;
+                contextDiv.className = 'contextMenu';
+                document.body.appendChild(contextDiv);
+
+                if (screen.availWidth - (event.clientX + contextDiv.offsetWidth) >= 0)
+                    contextDiv.style.left = event.clientX + 'px';
+                else contextDiv.style.right = '0px';
+
+                if (screen.availHeight - (event.clientY + contextDiv.offsetHeight) >= 0)
+                    contextDiv.style.top = event.clientY + 'px';
+                else contextDiv.style.bottom = '0px';
+
+                contextDiv.onclick = function(e){
+                    removeContextmenu();
+                };
+                contextDiv.oncontextmenu = function(e){
+                    removeContextmenu();
+                    e.preventDefault();
+                }
             }
-        };
-        addNewElementToContextmenu(renameElement);
 
-        return false;
+            function addNewElementToContextmenu(obj){
+                var elem = document.createElement('div');
 
-        function createBackgroundDiv() {
-            backgroundDiv.className = 'background';
-            backgroundDiv.onclick = function () {
-                removeContextmenu();
-            };
-            backgroundDiv.oncontextmenu = function () {
-                removeContextmenu();
-                return false;
-            };
-            document.body.appendChild(backgroundDiv);
+                elem.className = 'contextElement';
+                elem.innerHTML = obj.elementName;
+                elem.onclick = function(){
+                    obj.func();
+                };
+                elem.oncontextmenu = function(){
+                    obj.func();
+                };
+                elem.onmouseenter = function(){
+                    elem.classList.add('highlight');
+                };
+                elem.onmouseleave = function(){
+                    elem.classList.remove('highlight');
+                };
+                contextDiv.appendChild(elem);
+            }
+
+            function removeContextmenu() {
+                document.body.removeChild(contextDiv);
+                document.body.removeChild(backgroundDiv);
+            }
+        }
+    }
+
+    function checkMainDivHeight(){
+        var isMaxHeightSet = false;
+
+
+        if(mainDiv.offsetHeight > 300 && !isMaxHeightSet) {
+            mainDiv.classList.add('maxHeightMainDiv');
+            isMaxHeightSet = true;
+        }
+        else {
+            mainDiv.classList.remove('maxHeightMainDiv');
+            isMaxHeightSet = false;
+        }
+    }
+
+    function listElementHTML(index, isFile, text, HTML){
+        var buf = '';
+
+        if(isFile)
+            buf = elementIconHTML(index, true) + elementNameHTML(index, true, text);
+        else
+            buf = toggleButtonHTML(index) + elementIconHTML(index, false) +
+                elementNameHTML(index, false, text) + nestedListHTML(index, HTML);
+
+        return '<li data-description="listElement" data-index="' + index + '">' + buf + '</li>';
+    }
+
+    function toggleButtonHTML(index){
+        return '<img data-description="toggleButton" data-index="' + index + '" class="button unvisible" src="img/plus.png">';
+    }
+
+    function elementIconHTML(index, isFile){
+        var src = '';
+        var description = '';
+
+        if(isFile) {
+            src = 'img/file.png';
+            description = 'fileImage';
+        }
+        else {
+            src = 'img/folderClose.png';
+            description = 'folderImage';
         }
 
-        function createContextDiv() {
-            contextDiv.className = 'contextMenu';
-            if (screen.width - (event.clientX + 100) >= 0)
-                contextDiv.style.left = event.clientX + 'px';
-            else contextDiv.style.right = '0px';
-            if (screen.width - (event.clientY + 100) >= 0)
-                contextDiv.style.top = event.clientY + 'px';
-            else contextDiv.style.bottom = '0px';
-            document.body.appendChild(contextDiv);
-        }
+        return '<img  data-description="' + description + '" data-index="' + index + '" src="' + src + '" >';
+    }
 
-        function addNewElementToContextmenu(obj){
-            var elem = document.createElement('div');
-            elem.innerHTML = obj.elementName;
-            elem.onclick = function(){
-                obj.func();
-                removeContextmenu();
+    function elementNameHTML(index, isFile, text){
+        var description = '';
 
-            };
-            elem.oncontextmenu = function(){
-                obj.func();
-                removeContextmenu();
-                return false;
-            };
-            contextDiv.appendChild(elem);
-        }
+        if(isFile)
+            description = 'fileName';
+        else
+            description = 'folderName';
+        return '<span data-description="' + description + '" data-index="' + index + '" class="name">' + text + '</span>';
+    }
 
-        function removeContextmenu() {
-            document.body.removeChild(contextDiv);
-            document.body.removeChild(backgroundDiv);
-        }
+    function nestedListHTML(index, HTML){
+        var nestedElement = HTML || '';
+        return '<ul data-index="' + index + '" data-description="nestedList" hidden="true">'+
+            nestedElement + '</ul>';
     }
 }
 
-function toggleButtonHTML(index){
-    return '<div data-description="toggleButton" data-index-toggle-button="' + index +
-           '" class="button unvisible" onclick="toggle(\'' + index + '\')">+</div>';
-}
-
-function elementIconHTML(index, isFile){
-    var src = '';
-    var description = '';
-    if(isFile) {
-        src = 'img/file.png';
-        description = 'fileImage';
-    }
-    else {
-        src = 'img/folderClose.png';
-        description = 'folderImage';
-    }
-
-    return '<img  data-description="' + description + '" data-index-element-icon="' + index + '" src="' + src + '" >';
-}
-
-function elementNameHTML(index, isFile, text){
-    var description = '';
-
-    if(isFile)
-        description = 'fileName';
-    else
-        description = 'folderName';
-    return '<span data-description="' + description + '" data-index-element-name="' + index + '" class="name">' + text + '</span>';
-}
-
-function nestedListHTML(index, HTML){
-    var nestedElement = HTML || '';
-    return '<ul data-index-nested-list="' + index + '" data-description="nestedList" hidden="true">'+
-           nestedElement + '</ul>';
-}
