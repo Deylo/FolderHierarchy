@@ -57,6 +57,14 @@ function createList(id,obj){
     checkMainDivHeight();
     initializeMainDivEvent();
 
+    if (!('remove' in Element.prototype)) {
+        Element.prototype.remove = function() {
+            if (this.parentNode) {
+               this.parentNode.removeChild(this);
+           }
+        };
+    };
+
     function toggle(index, needOpen){
         var ulElement = mainDiv.querySelector('[data-index="' + index + '"][data-description="nestedList"]');
         var toggleButtonElement = mainDiv.querySelector('[data-index="' + index + '"][data-description="toggleButton"]');
